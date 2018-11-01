@@ -1,0 +1,375 @@
+<template>
+    <div class="changeBG">
+      <div class="head">
+        <i class="iconfont icon-fanhui" @click="back"></i>
+        <span>提现</span>
+      </div>
+      <div class="withdrawC">
+        <div class="selBZ">
+          <p @click="changBZ"><span ref="selType">请选择币种</span><i class="iconfont icon-xiasanjiao"></i></p>
+        </div>
+        <ul class="hidLists" v-show="hidState">
+          <!--<li v-for="(item,index) of hidInfos" @click="changTxt(item)">{{item}}</li>-->
+          <li v-for="item in $store.getters.currency.params" @click="changTxt(item.code)">{{item.code}}</li>
+        </ul>
+      </div>
+      <div class="lists">
+        <ul>
+          <li><span>总额</span><span>{{Number(totalMoeny).toFixed(2)}}</span><span ref="dw0">请选择币种</span></li>
+          <li><span>下单冻结</span><span>{{Number(frozenMoney).toFixed(2)}}</span><span ref="dw1">请选择币种</span></li>
+          <li><span>可用余额</span><span>{{Number(totalMoeny - frozenMoney).toFixed(2)}}</span><span ref="dw2">请选择币种</span></li>
+        </ul>
+      </div>
+      <div class="withdrawInfo">
+        <ul>
+          <li class="withdrawAddr">
+            <p>提现地址</p>
+            <div class="withdrawAddrC"><p @click="selAddress"><span ref="selMoutAddr">请选择提现地址</span><i class="iconfont icon-xiasanjiao"></i></p></div>
+            <ul v-show="hidSelAddr" class="moneyOutLists">
+              <li v-for="(item,index) of addrLists" :key="index" @click="selAddrTxt(item)">{{item.currencyCode}}</li>
+            </ul>
+            <div class="withdrawAddDetail">
+              <p><span>地址：</span><span ref="selMoutAddress"></span></p>
+              <p><span>备注：</span><span ref="selMoutRemark"></span></p>
+            </div>
+          </li>
+          <li class="withdrawNum">
+            <p>提现数量</p>
+            <div class="withdrawAddrC"><p><input type="number" v-model="moneyOutNum" placeholder="请输入提现数量"></p></div>
+            <div class="withdrawNumDetail">
+              <p><span>手续费：</span><span>{{withdrawFee}}</span></p>
+              <p><span>实际到账：</span><span>{{moneyOutNum?(parseFloat(moneyOutNum) - parseFloat(withdrawFee)):0}}</span></p>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="alertInfos">
+        <div style=" color: red;line-height: 1.5rem;font-size: 12px;letter-spacing: 2px;padding: 0.3rem">
+          <p>注意:</p>
+          <p>①最小提现数量为: <span v-show="IsShow">{{withdrawMin}} {{ unitDW }}</span><span v-show="!IsShow" ref="dw3">请选择币种</span>。</p>
+          <p>②请勿直接提现至众筹或ICO地址,我们不会处理未来代币的发放。</p>
+          <p>③请务必确认电脑及浏览器安全,防止信息被篡改或泄露。</p>
+        </div>
+      </div>
+      <p class="confirm" @click="confirmMO"><span>确认</span></p>
+      <p class="withdrawHistory"><router-link :to="{path:'history',query:{type:'1'}}" tag="span">提现记录</router-link></p>
+    </div>
+</template>
+
+<script>
+    export default {
+      name: "moneyOut",
+      data(){
+        return {
+          hidState: false,
+          // hidInfos: [ 'USDT', 'BTC', 'ETH'],
+          hidSelAddr: false,
+          addrLists: [],
+          moneyOutNum: '',
+          withdrawFee: 0,//手续费
+          withdrawMin: '',//最小提币额
+          IsShow: false,
+          unitDW: '',//币种
+          totalMoeny: '',
+          frozenMoney: '',
+        }
+      },
+      mounted(){
+        // this.getServiceFee();//提取该币种的手续费 ,
+      },
+      methods: {
+        back(){
+          this.$router.go(-1);
+        },
+        changBZ(){
+          this.hidState = this.hidState == true? false: true;
+        },
+        changTxt(txt){
+          this.$refs.selType.innerHTML = txt;
+          this.hidState = false;
+          this.$refs.dw0.innerHTML = txt;
+          this.$refs.dw1.innerHTML = txt;
+          this.$refs.dw2.innerHTML = txt;
+          this.$refs.dw3.innerHTML = txt;
+          this.getMoneyOutAddr(txt);
+          setTimeout(this.getBBInfos(),500);
+          this.$refs.selMoutAddr.innerHTML = ''; //初始币种钱包选择
+          this.$refs.selMoutAddress.innerHTML = ''; //初始币种钱包地址显示
+          this.$refs.selMoutRemark.innerHTML = ''; //初始币种钱包备注显示
+          this.addrLists = []; //初始获取到的币种钱包列表
+          this.getServiceFee();//提取该币种的手续费 ,
+        },
+        selAddress(){
+          this.hidSelAddr = this.hidSelAddr == true? false: true;
+        },
+        getBBInfos(){//获取币币账户信息
+          this.$axios({
+            url: '/api/assets/query',
+            method: 'post',
+            params: {
+              type: '1',
+            }
+          })
+            .then(res => {
+              if(res.data.errorCode === 0){
+                if(res.data.data && res.data.data.length !== 0){
+                  res.data.data.forEach((val,index) => {
+                    if(val.currencyCode == this.$refs.selType.innerHTML){
+                      this.totalMoeny = val.amount;
+                      this.frozenMoney = val.frozenAmount;
+                    }
+                  })
+
+                }else {
+                  // this.$toast('返回数据为空');
+                }
+              }else {
+                this.$toast(res.data.errorCode);
+              }
+            })
+            .catch(err => {
+              this.$toast(err.data.errorMsg);
+            })
+        },
+        getMoneyOutAddr(item){//获取提现地址
+          this.$axios({
+            url: '/api/wallet/queryaddress',
+            method: 'post',
+            params: {
+              start: 0,
+              rows: 100,
+              currency: item || ''
+            }
+          })
+            .then(res => {
+              if(res.data.errorCode === 0){
+                if(res.data.page.data.length !== 0){
+                  this.addrLists = res.data.page.data;
+
+                }else {
+                  this.$toast('未绑定提现地址');
+                }
+              }else {
+                this.$toast(res.data.errorCode);
+              }
+            })
+            .catch(err => {
+              this.$toast(err.data.errorMsg);
+            })
+        },
+        selAddrTxt(item){
+          this.$refs.selMoutAddr.innerHTML = item.currencyCode;
+          this.$refs.selMoutAddress.innerHTML = item.address;
+          this.$refs.selMoutRemark.innerHTML = item.remark || '无';
+          this.hidSelAddr = false;
+        },
+        confirmMO(){
+          if(this.$refs.selType.innerHTML == '请选择币种'){
+            this.$toast('请选择币种');
+          }else if(this.$refs.selMoutAddr.innerHTML == '请选择提现地址'){
+            this.$toast('提现地址为空');
+          }else if(!this.moneyOutNum){
+            this.$toast('请输入提现数量');
+          }else {
+            //调用提现的接口
+            this.moneyOut();
+          }
+        },
+        moneyOut(){//提现的接口
+          this.$axios({
+            url: '/api/wallet/moneyout',
+            method: 'post',
+            data:{
+              currencyCode: this.$refs.selType.innerHTML,
+              number: this.moneyOutNum,
+            },
+          })
+            .then(res => {
+              if(res.data.errorCode === 0){
+                this.$toast(res.data.errorMsg);
+                this.moneyOutNum = '';
+              }else {
+                this.$toast(res.data.errorMsg);
+              }
+            })
+            .catch(err => {
+              this.$toast(err.data.errorMsg);
+            })
+        },
+        getServiceFee(){//获取提现手续费
+          this.$axios({
+            url: '/api/trade/currency_list',
+            method: 'post',
+          })
+            .then(res => {
+              if(res.data.errorCode === 0){
+                if(res.data.data && res.data.data.length !== 0){
+                  res.data.data.forEach((item,index) => {
+                    if(item.code == this.$refs.selType.innerHTML){
+                      this.withdrawFee = item.withdrawFee;
+                      this.withdrawMin = item.withdrawMin;
+                      this.IsShow = true;
+                      this.unitDW = this.$refs.selType.innerHTML;
+                    }
+                  })
+                }else {
+                  // this.$toast('数据为空');
+                }
+              }else {
+                this.$toast(res.data.errorMsg);
+              }
+            })
+            .catch(err => {
+              this.$toast(err.data.errorMsg);
+            })
+        },
+      },
+      filters: {
+        //保留2位小数点过滤器 不四舍五入
+        number(value) {
+          var toFixedNum = Number(value).toFixed(3);
+          var realVal = toFixedNum.substring(0, toFixedNum.toString().length - 1);
+          return realVal;
+        },
+      },
+
+    }
+</script>
+
+<style scoped>
+  .head {
+    height: 4rem;
+    background: #0088f1;
+    color: #fff;
+    text-align: center;
+    padding: 0 1.2rem;
+    line-height: 4rem;
+    font-size: 1.2rem;
+  }
+  .head i {
+    position: absolute;
+    color: #fff;
+    left: 1.2rem;
+    font-size: 1.2rem;
+  }
+  .withdrawC {
+    padding:  1.2rem;
+    background: #fff;
+    padding-bottom: .3rem;
+  }
+  .selBZ P {
+    padding: 0 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    line-height: 2.5rem;
+    border: 1px solid #d9d9d9;
+    border-radius: 3px;
+    font-size: 1.1rem;
+  }
+  .selBZ i {
+    font-size: 1rem;
+    color: #7a7a7a;
+  }
+  .hidLists {
+    margin-top: .5rem;
+    padding: 0 1rem;
+    line-height: 2.5rem;
+    border: 1px solid #b3b2b2;
+    font-size: 1rem;
+    border-radius: 3px;
+    box-shadow: 0 0.3rem 0.3rem #d5d4d4;
+  }
+  .lists {
+    background: #fff;
+    padding: 0 1.2rem;
+  }
+  .lists ul li span:first-child{
+    display: inline-block;
+    width: 15%;
+  }
+  .lists ul li {
+    display: flex;
+    justify-content: space-between;
+    line-height: 2.5rem;
+    padding: .5rem .8rem;
+    border-bottom: 1px solid #dbdbdb;
+    color: #000;
+    font-size: 1rem;
+  }
+  .withdrawInfo {
+    padding: 1.2rem;
+    background: #fff;
+  }
+  .withdrawAddr > p, .withdrawNum > p {
+    font-size: 1.1rem;
+    line-height: 3rem;
+  }
+  .withdrawAddrC p{
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.1rem;
+    border: 1px solid #d9d9d9;
+    color: #7a7a7a;
+    line-height: 2.3rem;
+    border-radius: 3px;
+    padding: 0 .5rem;
+  }
+  .withdrawAddrC p i {
+    font-size: 1rem;
+    color: #787878;
+  }
+  .withdrawAddDetail {
+    font-size: 1rem;
+    padding: .5rem ;
+    color: #7a7a7a;
+    padding-bottom: 1rem;
+  }
+  .withdrawAddDetail p {
+    line-height: 2rem;
+  }
+
+  .withdrawNumDetail {
+    display: flex;
+    justify-content: space-around;
+    line-height: 2rem;
+    margin-top: .5rem;
+  }
+  .alertInfos {
+    padding-left:  2.5rem;
+    background: #fff;
+  }
+  .confirm {
+    margin: auto;
+    margin-top: .5rem;
+    width: 80%;
+    text-align: center;
+  }
+  .confirm span {
+    display: inline-block;
+    width: 40%;
+    padding: .3rem 0;
+    color: #fff;
+    font-size: 1.2rem;
+    background: #0088f1;
+  }
+  .withdrawHistory {
+    background: #fff;
+    text-align: center;
+    color: #0088f1;
+    line-height: 2rem;
+    cursor: pointer;
+    padding: .5rem;
+    padding-bottom: 1rem;
+    font-size: 1.2rem;
+  }
+  .moneyOutLists {
+    margin-top: .5rem;
+    padding: .5rem 1rem;
+    line-height: 2.5rem;
+    border: 1px solid #b3b2b2;
+    font-size: 1rem;
+    border-radius: 3px;
+    box-shadow: 0 0.3rem 0.3rem #d5d4d4;
+  }
+</style>

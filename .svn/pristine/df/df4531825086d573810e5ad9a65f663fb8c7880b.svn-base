@@ -1,0 +1,229 @@
+<template>
+    <div class="changeBG">
+      <!--头部-->
+      <van-nav-bar title="个人中心" left-text="返回" left-arrow @click-left="$back()">
+        <van-icon class="iconfont icon-fanhui" slot="left" />
+      </van-nav-bar>
+
+        <!--认证-->
+      <div class="certification">
+        <div class="title">
+          <span>{{userData.nickName }}</span>
+        </div>
+        <ul class="certification_list">
+          <!--普通认证 未认证或认证失败-->
+          <li class="certification_item" v-if="userData.authStatusGeneral === '0' || userData.authStatusGeneral === '3'">
+            <router-link to="/identityCertification">
+              <div class="identity_list_cont clearfix">
+                <div class="identity_list_cont_left fl">
+                  <span>身份认证</span>
+                </div>
+                <div class="identity_list_cont_right fr">
+                  <span>立即认证</span>
+                  <em class="iconfont icon-jiantouarrow487"></em>
+                </div>
+              </div>
+              <p>完成实名认证可进行小额交易</p>
+              <!--<img src="../image/rz_sure.png" alt="">-->
+            </router-link>
+          </li>
+          <!--普通认证 认证中-->
+          <li class="certification_item"  v-if="userData.authStatusGeneral === '1'">
+            <router-link to="">
+              <div class="identity_list_cont clearfix">
+                <div class="identity_list_cont_left fl">
+                  <span>身份认证</span>
+                </div>
+                <div class="identity_list_cont_right fr">
+                  <span>认证中</span>
+                </div>
+              </div>
+              <p>完成实名认证可进行小额交易</p>
+              <!--<img src="../image/rz_sure.png" alt="">-->
+            </router-link>
+          </li>
+          <!--普通认证 认证成功-->
+          <li class="certification_item"  v-if="userData.authStatusGeneral === '2'">
+            <router-link to="">
+              <div class="identity_list_cont clearfix">
+                <div class="identity_list_cont_left fl">
+                  <span>身份认证</span>
+                </div>
+              </div>
+              <p>完成实名认证可进行小额交易</p>
+              <img src="../image/rz_sure.png" alt="">
+            </router-link>
+          </li>
+
+          <!-- 普通认证未成功时不可进行高级认证
+          <li class="certification_item" v-if="userData.authStatusGeneral !== '2'">
+            <router-link to="">
+              <div class="identity_list_cont clearfix">
+                <div class="identity_list_cont_left fl">
+                  <span>高级认证</span>
+                </div>
+                <div class="identity_list_cont_right fr">
+                  请先完成身份认证
+                </div>
+              </div>
+              <p>完成高级认证可进行比较大提现额度</p>
+            </router-link>
+          </li>
+          高级认证 未认证或认证失败
+          <li class="certification_item" v-if="userData.authStatusGeneral === '2' && (userData.authStatusAdvanced  === '0' || userData.authStatusAdvanced  === '3')">
+            <router-link to="/seniorCertification">
+              <div class="identity_list_cont clearfix">
+                <div class="identity_list_cont_left fl">
+                  <span>高级认证</span>
+                </div>
+                <div class="identity_list_cont_right fr">
+                  <span>立即认证</span>
+                  <em class="iconfont icon-jiantouarrow487"></em>
+                </div>
+              </div>
+              <p>完成高级认证可进行比较大提现额度</p>
+            </router-link>
+          </li>
+          高级认证 认证中
+          <li class="certification_item" v-if="userData.authStatusGeneral === '2' && (userData.authStatusAdvanced  === '1')">
+            <router-link to="">
+              <div class="identity_list_cont clearfix">
+                <div class="identity_list_cont_left fl">
+                  <span>高级认证</span>
+                </div>
+                <div class="identity_list_cont_right fr">
+                  <span>认证中</span>
+                </div>
+              </div>
+              <p>完成高级认证可进行比较大提现额度</p>
+            </router-link>
+          </li>
+          高级认证 认证成功
+          <li class="certification_item" v-if="userData.authStatusGeneral === '2' && (userData.authStatusAdvanced  === '2')">
+            <router-link to="">
+              <div class="identity_list_cont clearfix">
+                <div class="identity_list_cont_left fl">
+                  <span>高级认证</span>
+                </div>
+              </div>
+              <p>完成高级认证可进行比较大提现额度</p>
+              <img src="../image/rz_sure.png" alt="">
+            </router-link>
+          </li> -->
+        </ul>
+        <!--内容-->
+        <ul class="certification_con">
+          <li>姓名</li>
+          <li>{{userData.authStatusGeneral === '2' ? userData.chnName : '未实名认证'}}</li>
+          <li>身份证号</li>
+          <li>{{userData.authStatusGeneral === '2' ? userData.idCard  : '未实名认证'}}</li>
+        </ul>
+      </div>
+
+    </div>
+</template>
+
+<script>
+  export default {
+    name: "certification",
+    data() {
+      return {
+        userData: {}
+      }
+    },
+    created() {
+      this.getUserData()
+    },
+    methods: {
+      getUserData() {  //获取用户信息
+        this.$axios.post("/api/user/query_active_user")
+          .then(res => {
+            if(res.data.errorCode === 0) {
+              this.userData = res.data.data;
+            }
+          }).catch(err => {
+
+        });
+      },
+    }
+  }
+</script>
+
+
+<style scoped>
+  /*认证*/
+  .certification {
+    min-height: calc(100% - 6.3rem);
+    margin-top: 0.4rem;
+    background: #fff;
+    padding: 1rem;
+  }
+  .certification .title {
+    height: 3rem;
+    line-height: 3rem;
+    border-bottom: 1px solid #d9d9d9;
+    font-size: 1.3rem;
+  }
+  .certification .certification_list {
+
+  }
+  .certification .certification_list .certification_item {
+    margin-top: 1.2rem;
+    padding: 0 1rem;
+    background: #eaf9ff;
+    border-radius: 5px;
+    height: 6rem;
+  }
+  .certification .certification_list .certification_item a {
+    display: block;
+    width: 100%;
+    height: 100%;
+    color: #6f767a;
+    position: relative;
+  }
+  .certification .certification_list .certification_item a .identity_list_cont {
+    height: 3rem;
+    line-height: 3rem;
+    font-size: 1.3rem;
+  }
+  .certification .certification_list .certification_item a .identity_list_cont .identity_list_cont_left {
+    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA+CAMAAABA6ohLAAAAGFBMVEVvdnpvdnpvdnpvdnpvdnpvdnpvdnpvdnrrlgBOAAAACHRSTlMCy5u5K39KZU5+J0IAAAHPSURBVEjH7ZfbksMgCIYjx/d/44LRxEOMujuze1PSdtJJv0HhB+xx/NpEmdnfqx9yocRh25gSDCHgpoUAJ6t2R5sGGDQ5xv0oYXINeQk7Bl/4C/8TLCL0Q1i94vAqWG2NXmBI5Y5nt6CuD7zAxoKqWMEi3TCmt5sMYc0dRnKzILnsvB3vGZLD4+DkYz1glNtLdbsKhxLmP/RcdMP9Pcc+nKTyqtpBng1SEbY5QFmrpelLqmyrpk678o53FCYch4kPINAUNxfXfY0VpielyuDziOIEXVw23+VE4vOP1gMm5raYvJY2WIYtVnVqYZzqDtbQagqHA7SDe1no0HVWYoalF/O4OGzA1/CDm2lnzT/gJJ7nTZOdmFLze4Lp4VnWBHHqYCCbS4vhOE9MLqJNWKNLi5HwfYhahF14d3+pc7IQ0SINTtM6LLXw7Cuvw9AUV3Xom8GtyjQUpTeBO4lW25jD2sLrnqFb9jrcnYq5DOAMboq6jsFUJFjlCqpeZcvQiWu8aItAFT+fCcBPBqkNe0eO5Wr9GJvMCQ7/xMjVz60Ngw8Cr0soFWelbg+6y175V3KdkdT/SOHsmNaWB5tn1pS7t9E9Ma4my67142FrE1EaH14TDPTLVUS6AAAAAElFTkSuQmCC) no-repeat left center;
+    background-size: 20% 50%;
+  }
+  .certification .certification_list .certification_item a .identity_list_cont .identity_list_cont_left span {
+    padding-left: 2.2rem;
+  }
+  .certification .certification_list .certification_item a .identity_list_cont .identity_list_cont_right span {
+    color: #0088f1;
+    font-size: 1.2rem;
+  }
+  .certification .certification_list .certification_item a p {
+    font-size: 1.2rem;
+  }
+  .certification .certification_list .certification_item a img {
+    position: absolute;
+    width: 5rem;
+    height: 5rem;
+    top: 0.6rem;
+    right: 0;
+  }
+  /*内容*/
+  .certification .certification_con {
+    width: 100%;
+    padding: 2rem 0;
+  }
+  .certification .certification_con li {
+    line-height: 2.6rem;
+    font-size: 1.3rem;
+  }
+  .certification .certification_con li:nth-child(odd) {
+    color: #787878;
+  }
+  .certification .certification_con li:nth-child(even) {
+    color: #000;
+    border-bottom: 1px dashed #ccc;
+  }
+  .certification .certification_con li:last-child {
+    border-bottom: 0;
+  }
+</style>

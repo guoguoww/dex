@@ -1,0 +1,460 @@
+<template>
+  <div>
+    <div class="changeBG">
+      <div class="header" v-show="unLogin">
+        <div><img src="./images/logo.png" alt=""></div>
+        <div><router-link to="/login" tag="p">登录/注册</router-link></div>
+      </div>
+      <div class="loginSucess" v-show="!unLogin">
+        <div>
+          <i class="iconfont icon-mine"></i>
+          <span>{{userData.nickName}}</span>
+        </div>
+        <div><router-link to="user" tag="div"><em class="iconfont icon-caidan"></em></router-link></div>
+      </div>
+      <div class="carouselC">
+        <van-swipe :autoplay="3000" :show-indicators="false">
+          <van-swipe-item v-for="(image, index) in images" :key="index">
+            <img v-lazy="image.src" />
+          </van-swipe-item>
+        </van-swipe>
+      </div>
+      <div class="verticalScroll">
+        <vueSeamless :class-option="classOption" :data="noticeLists">
+          <ul>
+            <li v-for="(list, index) of noticeLists" :key="index"><router-link :to="{path:'announceDetail',query:{listId: list.id}}" tag="p"><i></i><span>{{list.title}}</span></router-link></li>
+          </ul>
+        </vueSeamless>
+      </div>
+      <div class="dataContainer">
+        <ul>
+          <li>
+            <span v-for="(item, index) of marketData" :key="index">{{item.exchangeCode}}/{{item.unitsCode}}</span>
+          </li>
+          <li>
+            <span v-for="(item, index) of diffRatePrice" :key="index" :class="item.price>=0?'increaseUp':'increaseDown'">{{item.price | number}}</span>
+          </li>
+          <li>
+            <span v-for="(item, index) of diffRatePrice" :key="index" :class="item.diffRate>=0?'increaseUp':'increaseDown'">{{(item.diffRate) | number}}%</span>
+          </li>
+          <li>
+            <span v-for="(item, index) of diffRatePrice" :key="index">{{item.price | number}} {{item.unit}}</span>
+          </li>
+        </ul>
+      </div>
+      <div class="index_type">
+        <ul>
+          <router-link :to="{path:'ccAccount', query:{curTypeNum: 0 }}" tag="li">
+            <span>C2C账户</span><b v-show="!unLogin">{{total0 | number4}}</b><em v-show="!unLogin">￥{{changeH0 | number}}</em>
+          </router-link>
+          <router-link :to="{path:'conAccount', query:{curTypeNum: 2 }}" tag="li">
+            <span>合约账户</span><b v-show="!unLogin">{{total2 | number4}}</b><em v-show="!unLogin">￥{{changeH2 | number}}</em>
+          </router-link>
+          <router-link :to="{path:'bbAccount', query:{curTypeNum: 1 }}" tag="li">
+            <span>币币账户</span><b v-show="!unLogin">{{total1 | number4}}</b><em v-show="!unLogin">￥{{changeH1 | number}}</em>
+          </router-link>
+        </ul>
+      </div>
+    </div>
+    <div class="index_bottom">
+      <span>服务铸就品牌  细节创造精彩</span>
+    </div>
+  </div>
+
+
+</template>
+
+<script>
+  import Vue from 'vue';
+  import vueSeamless from 'vue-seamless-scroll'
+  import cookie from "../../../static/js/cookie";
+  import { Swipe, SwipeItem, Lazyload} from 'vant';
+  Vue.use(Swipe).use(SwipeItem);
+
+  Vue.use(Lazyload);
+
+  export default {
+    name: "HomePage",
+    data() {
+      return {
+        unLogin: true,
+        images: [
+          {'src':require('./images/carousel1.jpg')},
+          {'src':require('./images/carousel2.jpg')},
+          {'src':require('./images/carousel3.jpg')},
+        ],
+        noticeLists: [],
+        userData: {},//用户信息
+        marketData: [],//行情数据
+        strMarketPar: '',//行情数据中的行情代码
+        diffRatePrice: [],//行情数据涨跌率和价格
+        unitsCodes: [],//单位集合
+        total0: 0.0000,
+        changeH0: 0.00,
+        total1: 0.0000,
+        changeH1: 0.00,
+        total2: 0.0000,
+        changeH2: 0.00,
+        _timeOut: null,
+      }
+    },
+    mounted(){
+      //首先判断页面是否是登录状态
+      var userInfo = JSON.parse(cookie.get('_auth'));
+      if(!userInfo){
+        this.unLogin = true;
+      }else {
+        this.unLogin = false;
+        this.getUserData();//获取登录用户的基本信息
+      }
+      this.getAllMarket();
+
+      this._timeOut = setInterval(() => {//获取首页中的所有行情数据
+        this.getLatestMarket(this.strMarketPar,this.unitsCodes);
+      },3000)
+      this.getSurveyQuery();//获取资产概况查询
+      this.announce();//首页公告查询
+    },
+    methods: {
+      getUserData() {  //获取用户信息
+        this.$axios.post("/api/user/query_active_user")
+          .then(res => {
+            if (res.data.errorCode === 0) {
+              this.userData = res.data.data;
+            } else if (res.data.errorCode === -2) {
+              this.$cookie.clear(); //清除cookie
+              this.$router.push('/login') //跳转登录页
+            } else {
+              this.$toast(res.data.errorMsg);
+            }
+          })
+          .catch(err => {
+            this.$toast(err.data.errorMsg);
+          });
+      },
+      getAllMarket(){//获取首页中的所有行情数据
+        this.$axios.post('/api/market/all_market')
+          .then(res => {
+            if(res.data.errorCode === 0){
+              this.marketData = res.data.data;
+              this.strMarketPar = [];
+              this.unitsCodes = [];
+              this.marketData.forEach((item,index)=> {
+                this.strMarketPar += `${item.marketCode},`;
+                this.unitsCodes.push(item.unitsCode)
+              });
+
+              this.getLatestMarket(this.strMarketPar,this.unitsCodes)//获取最新行情数据
+
+            }else if(res.data.errorCode === -2){
+              this.$cookie.clear(); //清除cookie
+              this.$router.push('/login') //跳转登录页
+            }else {
+              this.$toast(res.data.errorMsg);
+            }
+          })
+          .catch(err => {
+            this.$toast(err.data.errorMsg);
+          })
+      },
+      getLatestMarket(latestData,unitVal){//获取首页最新行情数据
+        this.$axios({
+          url: '/api/market/latest_market',
+          method: 'get',
+          params: {
+            codes: latestData
+          }
+        })
+          .then(res => {
+            if(res.data.errorCode === 0){
+              this.diffRatePrice = res.data.data;
+              this.diffRatePrice.forEach((val,index) => {
+                val.unit = unitVal[index];
+              })
+            }else {
+              this.$toast(res.data.errorMsg);
+            }
+          })
+          .catch(err => {
+            this.$toast(err.data.errorMsg);
+          })
+      },
+
+      getSurveyQuery(){//获取资产概况查询
+        if(this.$cookie.get('_auth')){
+          this.$axios({
+            url: '/api/assets/survey/query',
+            method: 'post',
+          })
+            .then(res => {
+              if(res.data.errorCode === 0){
+                if(res.data.data.length !== 0){
+                  res.data.data.forEach((item,index) => {
+                    if(item.assetsType == 0){
+                      this.total0 = item.btc;
+                      this.changeH0 = item.cny;
+                    }else if(item.assetsType == 1){
+                      this.total1 = item.btc;
+                      this.changeH1 = item.cny;
+                    }else if(item.assetsType == 2){
+                      this.total2 = item.btc;
+                      this.changeH2 = item.cny;
+                    }
+                  })
+                }else {
+                  // this.$toast('资产概况数据为空');
+                }
+              }else {
+                this.$toast(res.data.errorMsg);
+              }
+            })
+            .catch(err => {
+              this.$toast(err.data.errorMsg);
+            })
+        }
+      },
+      announce(){//首页公告查询
+        this.$axios({
+          url: '/api/user/announce',
+          method: 'post',
+          params: {
+            start: 0,
+            rows: 100,
+          }
+        })
+          .then(res => {
+            if(res.data.errorCode === 0){
+              if(res.data.page.data.length !== 0){
+                this.noticeLists = res.data.page.data;
+              }else {
+                // this.$toast('公告数据为空');
+              }
+            }else {
+              this.$toast(res.data.errorMsg);
+            }
+          })
+          .catch(err => {
+            this.$toast(err.data.errorMsg);
+          })
+      },
+      queryDetailInfo(listId){//查询公告明细
+        this.$axios({
+          url: '/api/user/announce/details',
+          method: 'post',
+          params: {
+            announceId: listId,
+          }
+        })
+          .then(res => {
+            if(res.data.errorCode === 0){
+              this.$router.push('announceDetail');
+            }else {
+              this.$toast(res.data.errorMsg);
+            }
+          })
+          .catch(err => {
+            this.$toast(err.data.errorMsg);
+          })
+      },
+
+    },
+    beforeDestroy() {
+      clearInterval(this._timeOut);
+      this._timeOut = null;
+    },
+    watch: {
+      marketData :{
+        handler: function (newVal, oldVal) {
+        },
+        deep: true
+      },
+      immediate: true,
+    },
+    computed: {
+      classOption () {
+        return {
+          step: .5, //步长 越大滚动速度越快
+          limitMoveNum: 2, //启动无缝滚动最小数据量 this.dataList.length
+          hoverStop: true, //是否启用鼠标hover控制
+          direction: 1, //1 往上 0 往下
+          openWatch: true, //开启data实时监听
+          singleHeight: 20, //单条数据高度有值hoverStop关闭
+          waitTime: 2500 //单步停止等待时间
+        }
+      },
+    },
+    filters: {
+      //保留2位小数点过滤器 不四舍五入
+      number(value) {
+        var toFixedNum = Number(value).toFixed(3);
+        var realVal = toFixedNum.substring(0, toFixedNum.toString().length - 1);
+        return realVal;
+      },
+      number4(value) {
+        var toFixedNum = Number(value).toFixed(5);
+        var realVal = toFixedNum.substring(0, toFixedNum.toString().length - 1);
+        return realVal;
+      }
+    },
+    components: {
+      vueSeamless
+    }
+  }
+</script>
+
+<style scoped>
+  .mint-header {
+    background-color: #fff;
+    color: #787878;
+  }
+  img {
+    max-width: 100%;
+  }
+  .loginSucess {
+    padding: 0 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    color: #00b4ff;
+    height: 3.5rem;
+    line-height: 3.5rem;
+  }
+  .loginSucess i, .loginSucess em {
+    color: #00b4ff;
+    vertical-align: middle;
+    font-size: 1.4rem;
+  }
+  .loginSucess span {
+    font-size: 1.2rem;
+    vertical-align: middle;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 3.5rem;
+    padding: 0 1.2rem;
+    font-size: 1.25rem;
+    color: #787878;
+
+  }
+  .carouselC {
+    padding: 0 1.2rem;
+  }
+  .carouselC > div {
+    border-radius: .5rem;
+  }
+
+  .header img {
+    height: 2rem;
+  }
+  .verticalScroll {
+    font-size: 1rem;
+    color: #8c8c8c;
+    height: 1.8rem;
+    line-height: 1.8rem;
+    overflow: hidden;
+    text-align: center;
+  }
+  .verticalScroll li p{
+
+  }
+  .verticalScroll li span {
+    display: inline-block;
+    width: 60%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+  }
+  .verticalScroll i {
+    display: inline-block;
+    width: 1.3rem;
+    height: 1.3rem;
+    background: url("./images/notice.png") center center no-repeat;
+    background-size: cover;
+    margin-right: .5rem;
+    vertical-align: middle;
+  }
+  .dataContainer ul {
+    overflow-x: scroll;
+    padding: 0 1.2rem;
+    padding-top: .5rem;
+  }
+  .dataContainer ul li {
+    line-height: 1.4rem;
+    color: #787878;
+    white-space: nowrap;
+  }
+  .dataContainer ul li span {
+    display: inline-block;
+    width: 31%;
+    padding:0 .5rem;
+    text-align: center;
+    font-size: 1rem;
+  }
+  .dataContainer ul li .increaseUp {
+    color: #49c86d;
+  }
+  .dataContainer ul li .increaseDown {
+    color: #ff3b3b;
+  }
+  .index_type {
+    padding: 0 1.2rem 0 1.2rem;
+  }
+  .index_type li {
+    margin-top: 1rem;
+    background: url("./images/rt_arrow_bg.png") no-repeat 98% 0.3rem;
+    border: 1px solid #f0f0f0;
+    height: 3.5rem;
+    line-height: 3.5rem;
+    border-radius: .5rem;
+    box-shadow: 0 0.3rem .6rem #edecec;
+    background-size: 3.8rem 2.9rem;
+    text-align: left;
+  }
+  .index_type li span {
+    display: inline-block;
+    padding-left: 3rem;
+    vertical-align: middle;
+    color: #bbb;
+    font-size: 1rem;
+  }
+  .index_type li:first-child span{
+    background: url("./images/sy_c2c.png") no-repeat 1rem .9rem;
+    background-size: 1.6rem 1.6rem;
+  }
+  .index_type li:nth-child(2) span{
+    background: url("./images/sy_hy.png") no-repeat 1rem .9rem;
+    background-size: 1.6rem 1.6rem;
+  }
+  .index_type li:nth-child(3) span{
+    background: url("./images/sy_bb.png") no-repeat 1rem .9rem;
+    background-size: 1.6rem 1.6rem;
+  }
+  .index_type ul li b {
+    font-size: 1rem;
+    font-weight: bold;
+    padding: 0 1.2rem 0 2rem;
+    color: #00b4ff;
+    vertical-align: middle;
+  }
+  .index_type ul li em {
+    font-size: 1rem;
+    vertical-align: middle;
+    color: #00b4ff;
+
+  }
+  .index_bottom {
+    position: absolute;
+    bottom: 4rem;
+    font-size: 1rem;
+    width: 100%;
+    height: 2.5rem;
+    text-align: center;
+    color: #fff;
+    left: 0;
+    background: url("./images/index_bottom_bg.png") no-repeat 0 0;
+    line-height: 2.5rem;
+    background-size: 100% 100%;
+  }
+</style>

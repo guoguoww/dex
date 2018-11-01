@@ -1,0 +1,429 @@
+<template>
+  <div class="changeBG">
+    <div class="head">
+      <i class="iconfont icon-fanhui" @click="back"></i>
+      <span>合约账单</span>
+    </div>
+    <div class="tabContent" >
+      <van-tabs :active="active" @click="tabClick" :swipe-threshold=5>
+        <van-tab>
+          <div slot="title">目前持仓</div>
+          <div>
+            <van-list v-model="loading" :finished="finished" :immediate-check="immediateCheck"  @load="onLoad0('0')">
+              <div class="curHoldCon">
+                <p class="curHold"><span>总保证金</span><span>浮动盈亏</span><span></span></p>
+                <van-cell v-for="(item,index) in conListInfos0" :key="index">
+                  <ul class="curHoldInfos">
+                    <li >
+                      <span>{{item.orderPrice}} {{item.symbol.split('/')[1]}}</span>
+                      <span>{{item.fdyk}} {{item.symbol.split('/')[1]}}</span>
+                      <span><em class="btnColor" @click="allUnwind(item.id)">全部平仓</em></span>
+                    </li>
+                  </ul>
+                </van-cell>
+              </div>
+            </van-list>
+          </div>
+        </van-tab>
+        <van-tab v-for="(item,index) of titData" :key="index">
+          <div slot="title" >{{item}}</div>
+          <div class="curOrderCon">
+            <p class="curOrder"><span>时间</span><span>类型</span><span>金额</span><span>盈亏</span><span>操作</span></p>
+            <van-list v-model="loading1" :finished="finished" :immediate-check="immediateCheck"  @load="onLoad1(index+1)">
+              <van-cell v-for="(list,index) in conListInfos1" :key="index">
+                <ul class="curOrderInfos">
+                  <li>
+                    <span v-show="detailTime">{{ymd}}</span>
+                    <span v-show="!detailTime">{{hms}}</span>
+                    <span>{{list.direction == '0'?'买涨':list.direction == '1'?'买跌':'无效方向'}}</span>
+                    <span>{{list.orderPrice}}</span>
+                    <span>{{list.difMoney}}</span>
+                    <span @click="detailInfoBtn(index)">详情</span>
+                  </li>
+                </ul>
+                <ul :class="{active1: curNum == index}" class="detailInfos">
+                  <li>
+                    <p><span>建仓时间：{{list.buyTime}}</span></p>
+                    <p><span>手续费：{{list.fee}}</span><span>建仓价：{{list.buyPoint}}</span></p>
+                    <p><span>盈亏: {{list.difMoney}}</span><span>类型:{{list.direction == '0'?'买涨':list.direction == '1'?'买跌':'无效方向'}}</span></p>
+                    <p><span>平仓价：{{list.sellPoint}}</span><span>保证金：{{list.orderPrice}}</span></p>
+                  </li>
+                </ul>
+              </van-cell>
+            </van-list>
+          </div>
+        </van-tab>
+      </van-tabs>
+    </div>
+    <div class="more" v-show="noData">
+
+      <span>没有更多数据</span>
+
+    </div>
+  </div>
+</template>
+
+<script>
+  export default {
+    name: "contractBills",
+    data(){
+      return {
+        active: 0,
+        conListInfos0: [],//目前持仓中的数据
+        conListInfos1: [],
+        titData: ['当日订单','历史订单'],
+        loading: false,
+        loading1: false,
+        finished: false,
+        startPage: -10, //起始页码
+        rows: 10,
+        immediateCheck: false,
+        totalPageNum: 0,//数据总条数据
+        curNum: -1,
+        noData: true,
+        detailTime: false,
+        ymd: '',//年月日
+        hms: '',//时分秒
+        floatProfileLoss: '',//目前持仓中的浮动盈亏,
+        _timeOut1: null,
+        codesAll: '',
+      }
+    },
+    mounted(){
+      this.getCurTradQuery('0');
+    },
+    methods: {
+      back(){
+        this.$router.go(-1);
+      },
+      getCurTradQuery(state){
+        this.startPage += this.rows;
+        this.$axios({
+          url: '/api/trade/contract/trade_query',
+          method: "post",
+          params: {
+            start: this.startPage,
+            rows: this.rows,
+            status: state,
+          }
+        })
+          .then(res => {
+            if(res.data.errorCode === 0){
+              if(res.data.page.data.length !== 0){
+
+                this.loading = false;
+
+                this.finished = false;
+
+                this.conListInfos0 = this.conListInfos0.concat(res.data.page.data);//目前持仓中的数据
+
+
+                this.conListInfos0.forEach((item,index) => {
+
+                  this.codesAll += (`${item.marketCode},`);
+
+                });
+
+                this._timeOut1 = setInterval(() => {
+                  this.getLatestMarket(this.codesAll);
+                },2000)//调用获取最新价格的接口
+
+                this.totalPageNum = res.data.page.total;
+
+                if (this.conListInfos0.length >= this.totalPageNum) {
+                  this.finished = true;
+                  return
+                }
+
+              }else {
+                // this.$toast('数据暂时为空');
+              }
+            }else {
+              this.$toast(res.data.errorMsg);
+            }
+          })
+          .catch(err => {
+            this.$toast(err.data.errorMsg)
+          })
+      },
+      //获取合约账单中的全部数据
+      getConTradQuery(state){
+        this.startPage += this.rows;
+        this.$axios({
+          url: '/api/trade/contract/trade_query',
+          method: "post",
+          params: {
+            start: this.startPage,
+            rows: this.rows,
+            status: state,
+          }
+        })
+          .then(res => {
+            if(res.data.errorCode === 0){
+              if(res.data.page.data.length !== 0){
+
+                this.loading1 = false;
+
+                this.finished = false;
+
+
+                this.conListInfos1 = this.conListInfos1.concat(res.data.page.data);//当前订单和历史订单中的数据
+
+                this.conListInfos1.forEach((curI,index) => {
+                  this.ymd = curI.buyTime.split(' ')[0];
+                  this.hms = curI.buyTime.split(' ')[1]
+                })
+
+                this.totalPageNum = res.data.page.total;
+
+                if (this.conListInfos1.length >= this.totalPageNum) {
+                  this.finished = true;
+                  return
+                }
+              }else {
+                // this.$toast('数据暂时为空');
+              }
+            }else {
+              this.$toast(res.data.errorMsg);
+            }
+          })
+          .catch(err => {
+            this.$toast(err.data.errorMsg)
+          })
+      },
+      tabClick(str){
+          if (this._timeOut1){
+            clearInterval(this._timeOut1);
+            this._timeOut1 = null;
+
+          }
+
+          console.log(123343)
+          this.conListInfos0 =  [],
+          this.conListInfos1 = [],
+          this.startPage = -10;
+          this.totalPageNum = 0;
+
+          this.curNum = -1;
+
+          if(str == 1){
+            this.detailTime = false;
+          }else if(str == 2){
+            this.detailTime = true;
+          }
+
+          if(str==0){
+
+            this.startPage = -10;
+            this.conListInfos0 =  [],
+              this.getCurTradQuery('0');
+
+          }else {
+
+            this.getConTradQuery(str);
+
+          }
+
+      },
+      onLoad0(iNum) {//上拉加载,下拉刷新
+        setTimeout(() => {
+
+          this.getCurTradQuery(iNum);
+
+        }, 500);
+      },
+      onLoad1(iNum) {//上拉加载,下拉刷新
+        setTimeout(() => {
+
+          this.getConTradQuery(iNum);
+
+        }, 500);
+      },
+      detailInfoBtn(index){
+
+        this.curNum = this.curNum == index? -1 : index;
+      },
+
+      getLatestMarket(latestData){//获取最新行情数据
+        this.$axios({
+          url: '/api/market/latest_market',
+          method: 'get',
+          async:false,
+          params: {
+            codes: latestData
+          }
+        })
+          .then(res => {
+            if(res.data.errorCode === 0){
+              this.conListInfos0.forEach((item,index)=> {
+                res.data.data.forEach((val) => {
+                  if(item.marketCode == val.code) {
+                    this.$set(item,'latestPrice',val.price);
+                  }
+                });
+
+                if(item.direction== '0'){//当前价 - 建仓价 （买涨）
+
+                  // this.$set(item , 'fdyk', Number(item.hands*(Math.abs(item.latestPrice) - Math.abs(item.buyPoint) )* item.pointPrice).toFixed(2));
+                  this.$set(item , 'fdyk', Number(item.hands*((item.latestPrice) - (item.buyPoint) )* item.pointPrice).toFixed(2));
+
+                }else if (item.direction == '1'){//建仓价 - 当前价 （买跌）
+                  // this.$set(item , 'fdyk', Number(item.hands*(Math.abs(item.buyPoint) - Math.abs(item.latestPrice) )* item.pointPrice).toFixed(2));
+                  this.$set(item , 'fdyk', Number(item.hands*((item.buyPoint) - (item.latestPrice) )* item.pointPrice).toFixed(2));
+                }
+              })
+
+
+            }else {
+              this.$toast(res.data.errorMsg);
+            }
+
+          })
+          .catch(err => {
+            this.$toast(err.data.errorMsg);
+          })
+
+      },
+      allUnwind(cruId){//全部平仓
+        this.$axios({
+          url: '/api/trade/contract/do_sell',
+          method: 'post',
+          params: {
+            tradeId: cruId,
+          }
+        })
+          .then(res => {
+            if(res.data.errorCode === 0){
+              this.$toast(res.data.errorMsg);
+              this.startPage = -10;
+              this.conListInfos0 =  [],
+              this.getCurTradQuery('0');
+            }
+          })
+          .catch(err => {
+            this.$toast(err.data.errorMsg);
+          })
+      }
+    },
+    beforeDestroy() {
+      clearInterval(this._timeOut1);
+      this._timeOut1 = null;
+    },
+    watch: {
+      conListInfos0: {
+        handler: function (val) {
+          val.forEach((item,index) => {
+            console.log(item);
+          })
+        },
+        deep: true
+      }
+    }
+  }
+</script>
+
+<style scoped>
+  .head {
+    height: 4rem;
+    background: #0088f1;
+    color: #fff;
+    text-align: center;
+    padding: 0 1.2rem;
+    line-height: 4rem;
+    font-size: 1.2rem;
+  }
+  .head i {
+    position: absolute;
+    color: #fff;
+    left: 1.2rem;
+    font-size: 1.4rem;
+  }
+  .curHoldCon,.curOrderCon,.hisOrderCon {
+    padding: 0 1.2rem;
+    background: #fff;
+  }
+  .curHold,.curOrder,.historyOrder{
+    display: flex;
+    justify-content: space-between;
+    line-height: 2.5rem;
+    padding: 0 15px;
+  }
+  .curHoldInfos li {
+    display: flex;
+    justify-content: space-between;
+    padding: .5rem 0;
+  }
+  .curHold span {
+    width: 33.3%;
+    text-align: center;
+  }
+  .curHoldInfos span {
+    width: 33.3%;
+    text-align: center;
+    font-size: 1rem;
+  }
+  .curHoldInfos span:first-child,.curHold span:first-child {
+    text-align: left;
+  }
+  .curHoldInfos span:last-child,.curHold span:last-child {
+    text-align: right;
+  }
+  .btnColor {
+    display: inline-block;
+    width: auto !important;
+    background: #0088f1;
+    color: #fff;
+    padding: 0 .3rem;
+    border-radius: .3rem;
+    font-size: 1rem;
+  }
+  .curOrderInfos li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .curOrderInfos li span {
+    display: inline-block;
+    width: 17%;
+    text-align: center;
+  }
+  .curOrder span:first-child {
+    width: 20%;
+  }
+  .curOrderInfos li span:first-child{
+    width: 25%;
+    text-align: left;
+  }
+  .curOrderInfos li span:last-child{
+    text-align: right;
+    background: #0088f1;
+    color: #fff;
+    width: 12%;
+    text-align: center;
+    border-radius: .2rem;
+  }
+  .detailInfos {
+    background: #efefef;
+    padding: .5rem;
+    display: none;
+    border-radius: .2rem;
+  }
+  .detailInfos li p{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1rem;
+  }
+  .detailInfos li p:not(:first-child) span {
+    display: inline-block;
+    width: 50%;
+  }
+  .active1 {
+    display: block;
+  }
+  .more {
+    font-size: 1rem;
+    text-align: center;
+    padding-top: .5rem;
+  }
+</style>

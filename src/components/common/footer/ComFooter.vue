@@ -1,0 +1,60 @@
+<template>
+    <div id="Foot">
+      <ul class="footerC">
+        <li><router-link to="/" exact><i class="iconfont icon-shouyeicon"></i><span>首页</span></router-link></li>
+        <li><router-link to="/c2c"><i class="iconfont icon-CCicon"></i><span>C2C</span></router-link></li>
+        <li><router-link to="/coin"><i class="iconfont icon-bibiicon"></i><span>币币</span></router-link></li>
+        <li><router-link to="/contract"><i class="iconfont icon-heyueicon"></i><span>合约</span></router-link></li>
+        <li><router-link to="/user"><i class="iconfont icon-hangqingicon"></i><span>账户</span></router-link></li>
+      </ul>
+    </div>
+</template>
+
+<script>
+    export default {
+        name: "Comfooter"
+    }
+</script>
+
+<style scoped>
+  #Foot {
+    position: fixed;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 99;
+    width: 100%;
+    background: #f0f0f0;
+  }
+  .footerC {
+    display: flex;
+    /* justify-content: space-around; */
+    padding: .4rem 0;
+  }
+  .footerC li{
+    width: 20%;
+  }
+  .footerC li a{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .footerC li a i{
+    color: #b4b4b4;
+    font-size: 2rem;
+  }
+  .footerC li span {
+    padding-top: 0.2rem;
+    font-size: 1rem;
+    color: #787878;
+    line-height: 1rem;
+  }
+  .router-link-active i {
+    color: #0088f1 !important;
+  }
+  /*.router-link-exact-active i[data-v-22069cac] {*/
+    /*color: #0088f1 !important;*/
+  /*}*/
+</style>

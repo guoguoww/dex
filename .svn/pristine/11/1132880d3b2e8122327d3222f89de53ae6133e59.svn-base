@@ -1,0 +1,1215 @@
+<template>
+  <div class="">
+    <!-- 头 -->
+    <div class="coin-head">
+      <ul>
+        <li @click="ktabactive=0" :class="{'coin-active':ktabactive==0}">
+          <span>
+            K线
+          </span>
+        </li>
+        <li @click="ktabactive=1" :class="{'coin-active':ktabactive==1}">
+          <span class="">
+            交易
+          </span>
+        </li>
+
+        <li>
+          <img src="../../../../static/images/jy_topright.png" style="width: 16px; height: 15px;" class="" @click="poprightshow=true">
+        </li>
+      </ul>
+    </div>
+    <div id="coinContent">
+      <!-- k线 -->
+      <div class="coin-cont" v-if="ktabactive==0">
+        <!-- 行情 k线图 -->
+        <div class="coin-quotation">
+          <!-- 行情 -->
+          <div class="coin-num">
+            <div class="coin-num-left">
+              <div class="coin-nav" @click="popleftshow=true">
+                <span>{{coin}}</span>
+                <i class="iconfont icon-xialasanjiao"></i>
+              </div>
+              <span>{{market.price}}
+                <em>{{coinitem.unitsCode}}{{market.price}}</em>
+              </span>
+              <p>{{market.diff}}
+                <em>{{market.diffRate}}%</em>
+              </p>
+              <b>24h成交量 0.00 ETH</b>
+            </div>
+            <div class="coin-num-right">
+              <!-- <button>自选</button> -->
+              <p style="text-align: left">24h最高价：
+                <em>{{market.high}}</em>
+              </p>
+
+              <p style="text-align: left; padding: 0">24h最低价：
+                <em style="color: #49c86d">{{market.low}}</em>
+              </p>
+            </div>
+          </div>
+          <!-- k线图 -->
+          <div class="coin-chart">
+            <!-- <ul id="item-list">
+              <li class="c-active">
+                <span>分时</span>
+                <span>
+                  <img height="7px" onmouseout="this.src='../../../../static/images/boe.png'" onmouseover="this.src='../../../../static/images/boc.png'" src="../../../../static/images/boe.png" width="7px">
+                </span>
+              </li>
+              <li>
+                <span>指标</span>
+                <span>
+                  <img height="7px" onmouseout="this.src='../../../../static/images/boe.png'" onmouseover="this.src='../../../../static/images/boc.png'" src="../../../../static/images/boe.png" width="7px">
+                </span>
+              </li>
+              <li>
+                <span>深度</span>
+              </li>
+            </ul> -->
+            <!-- 选项 -->
+            <div>
+              <div id="t_1" style="display: none;">
+                <table id="fs">
+                  <tbody>
+                    <tr>
+                      <td class="kline_td chart-active ">分时</td>
+                      <td class="kline_td ">1分钟</td>
+                      <td class="kline_td ">5分钟</td>
+                      <td class="kline_td ">15分钟</td>
+                      <td class="kline_td ">30分钟</td>
+                      <td class="kline_td ">1小时</td>
+                      <td class="kline_td ">日线</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div id="t_2" class="" style="display: none;">
+                <table id="fs1">
+                  <tbody>
+                    <tr>
+                      <td class="kline_td ">MACD</td>
+                      <td class="kline_td ">KDJ</td>
+                      <td class="kline_td ">StochRSI</td>
+                      <td class="kline_td ">RSI</td>
+                      <td class="kline_td ">DMI</td>
+                      <td class="kline_td ">OBV</td>
+                      <td class="kline_td ">BOLL</td>
+                      <td class="kline_td ">SAR</td>
+                    </tr>
+
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+            <!-- echart -->
+            <div id="kline_container" >
+
+            </div>
+            <!-- 最新成交 -->
+            <div class="coin-new">
+              <h6>最新成交</h6>
+              <table border="0" cellpadding="0" cellspacing="0">
+                <tbody>
+                  <tr>
+                    <td>价格</td>
+                    <td>数量</td>
+                    <td>时间</td>
+                  </tr>
+                  <tr v-for="(i,index) in latestdeal" :key="index">
+                    <td>{{i.transactionPrice }}</td>
+                    <td>{{i.volumes}}</td>
+                    <td>{{i.createTime}}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="coin-but">
+          <button class="hong" @click="ktabactive=1;trantabactive=0">
+            买入{{coinitem.exchangeCode}}
+          </button>
+          <button class="lan" @click="ktabactive=1;trantabactive=1">
+            卖出{{coinitem.exchangeCode}}
+          </button>
+        </div>
+      </div>
+      <!-- 交易 -->
+      <div class="coin-cont" v-if="ktabactive==1">
+        <div class="coin-transaction">
+          <div class="tran-head">
+            <ul class="tran-ul">
+              <li @click="popleftshow=true">
+                <span>{{coin}}</span>
+                <i class="iconfont icon-xialasanjiao"></i>
+              </li>
+              <li>
+                <p>{{market.price}}</p>
+                <em>{{coinitem.unitsCode}}{{market.price}}</em>
+              </li>
+              <li>
+                <b>{{market.diffRate}}%
+                </b>
+              </li>
+            </ul>
+          </div>
+          <div class="tran-cont">
+            <div class="tran-cont-right">
+              <div class="tran-tab">
+                <ul class="clearfix" style="width: 90%; display: flex">
+                  <li @click="trantabactive=0" :class="{'tran-tab-active':trantabactive==0,'tran-tab-active-red_no':trantabactive!=0}">
+                    买入
+                  </li>
+                  <li @click="trantabactive=1" :class="{'tran-tab-active-red':trantabactive==1,'tran-tab-active-red_no':trantabactive!=1}">
+                    卖出
+                  </li>
+                </ul>
+              </div>
+
+              <div class="tran-select">
+                <div @click="paylistshow=!paylistshow">
+                  <span>{{ordertype==0?"市价":'限价'}}</span>
+                  <i class="iconfont icon-xialasanjiao"></i>
+                </div>
+                <div class="pay-list" v-if="paylistshow">
+                  <ul>
+                    <li @click="ordertype=1;paylistshow=false">
+                      限价
+                    </li>
+                    <li @click="ordertype=0;paylistshow=false">
+                      市价
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="tran-num" style="margin-top: 20px;" v-if="ordertype==1">
+                <input type="text" :placeholder="`价格 (${coinitem.unitsCode})`" v-model="orderprice">
+              </div>
+              <div class="tran-num" style="margin-top: 20px; " v-else>
+                <input disabled="disabled" style="background-color: #f0f0f0" type="text" :placeholder="`价格 (${coinitem.unitsCode})`" v-model="orderprice">
+              </div>
+
+              <div class="tran-num" style="margin-top: 20px">
+                <input type="text" :placeholder="`数量 (${coinitem.exchangeCode})`" v-model="ordernum">
+              </div>
+
+              <h5 style="margin-top: 8px">
+                可用：
+                <em> </em>{{trantabactive?coinitem.exchangeCode:coinitem.unitsCode}}
+              </h5>
+              <div class="tran-but" style="margin-top: 10px">
+
+                <button class="tran-tab-active" @click="order" v-if="trantabactive==0">买入 {{coinitem.exchangeCode}}</button>
+                <button class="tran-tab-active-red" @click="order" v-else>卖出 {{coinitem.exchangeCode}}</button>
+              </div>
+            </div>
+
+            <div class="tran-cont-left">
+              <dl class="clearfix dl-red">
+                <dt class="dl-col">价格{{coinitem.unitsCode}}</dt>
+                <dd class="dl-col">数量{{coinitem.exchangeCode}}</dd>
+                <div v-for="i in 5" :key="i"  @click="chooseprice(0,market[`bp${i}`],market[`bv${i}`])">
+                  <dt style="width: 50%; float: left; text-align: left;">{{market[`bp${i}`]}}</dt>
+                  <dd style="width: 50%; float: right; text-align:right;">{{market[`bv${i}`]}}</dd>
+                </div>
+
+
+              </dl>
+              <dl class="clearfix dl-green">
+                <div v-for="i in 5" :key="i" @click="chooseprice(1,market[`sp${i}`],market[`sv${i}`])">
+                  <dt style="width: 50%; float: left; text-align: left">{{market[`sp${i}`]}}</dt>
+                  <dd style="width: 50%; float: right; text-align:right">{{market[`sv${i}`]}}</dd>
+                </div>
+              </dl>
+            </div>
+
+          </div>
+
+          <div class="tran-price">
+            <div>
+              <div class="dq">
+                <div style="font-weight: bold;">当前委托</div>
+                <div style="font-weight: bold;">全部</div>
+              </div>
+                <div class="border-table">
+                    <table border="0" cellpadding="0" cellspacing="0">
+                        <tbody>
+                            <tr>
+                                <td>时间</td>
+                                <td>币种</td>
+                                <td>方向</td>
+                                <td>单价</td>
+                                <td>数量</td>
+                                <td>总价</td>
+                                <!-- <td>操作</td> -->
+                            </tr>
+                            <tr class="item" v-for="(i,index) in entrustlist" :key="index">
+                                <td>{{i.createTime}}</td>
+                                <td>{{i.symbol}}</td>
+                                <td>{{i.direction==0?'买入':'卖出'}}</td>
+                                <td>{{i.unitPrice}}</td>
+                                <td>{{i.orderQuantity}}</td>
+                                <td>{{i.orderPrice}}</td>
+                                <!-- <td>操作</td> -->
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+              <div style="height: 30px; display: none;">
+                <span style="height: 30px; line-height: 30px; text-align: center; color: darkgrey">
+                  查看更多
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+    <!-- 左边弹出选择币种 -->
+    <van-popup v-model="popleftshow" position="left" class="popleft">
+      <div class="swit-head-down" style="">
+        <span style=""> 选择币种 </span>
+      </div>
+      <div class="swit-list">
+        <ul>
+          <li v-for="(i,index) in category" :key="index" @click="coinitem=i">
+            <span> {{i.exchangeCode }}/{{i.unitsCode }} </span>
+          </li>
+        </ul>
+      </div>
+    </van-popup>
+    <!-- 右边弹出 菜单 -->
+    <van-popup v-model="poprightshow" position="right" class="popright">
+      <div class="swit-head">
+        <img src="../../../../static/images/right_close.png" style="width: 20px; height: 19px;display: block;" @click="poprightshow=false">
+      </div>
+      <div class="swit-list">
+        <ul>
+          <li>
+            <span>
+              <router-link to="/certification">个人中心</router-link>
+            </span>
+          </li>
+          <!-- <li>
+            <span>
+              <router-link to="/payment">资产管理</router-link>
+            </span>
+          </li> -->
+          <li>
+            <span>
+              <router-link to="/current">当前委托</router-link>
+            </span>
+          </li>
+          <li>
+            <span>
+              <router-link to="/tradehistory">历史成交</router-link>
+            </span>
+          </li>
+        </ul>
+      </div>
+    </van-popup>
+  </div>
+</template>
+
+<script type="">
+// import Kline from "kline";
+export default {
+    name: "coin",
+    data() {
+        return {
+            kline: null, //k线对象
+            poprightshow: false, //右边弹出层
+            popleftshow: false, //左边弹出层
+            ktabactive: '0', //k线交易tab选择
+            trantabactive: "0", //交易买入卖出选择 0:买入 1:卖出
+            category: [], //币种列表
+            coinitem: {}, //当前选择的货币
+            market: {}, //当前行情
+            markettimer: null, //行情定时器
+            paylistshow:false,//下拉框显示
+            ordertype:'1',//交易类型 0限价 1市价
+            orderprice:'',//交易金额
+            ordernum:'',//交易数量
+            entrustlist:[],//委托列表
+            latestdeal:[],//最新成交
+            // interval:null,//k线时间
+        };
+    },
+    components: {},
+    watch: {
+        coin(v,l) {
+            //币种切换时
+            this.popleftshow = false;
+            this.setmarkettimer();
+            this.getmarket()
+            // this.$nextTick(()=>{
+            //     this.initkline()
+            //     this.kline.resend()
+            // })
+            if (l.split('/')[0]=='undefined') {
+                // console.error(v,l.split('/'))
+                return
+            }
+            var interval=this.kline.range/1000/60
+                    if (interval==60) {
+                        interval='1h'
+                    }
+                    if (interval==1440) {
+                        interval='1d'
+                    }
+            this.kline.setSymbol(this.coinitem.marketCode,this.coinitem.marketCode,{
+                 code:this.coinitem.marketCode,
+                 interval
+            })
+            // this.kline.updated({
+            //     code:this.coinitem.marketCode,
+            //     interval:1
+            // })
+        },
+        ordertype(v){//交易类型变化时
+        // 交易类型为
+          if (v==0) {
+            this.orderprice=this.market.price
+          }else{
+            this.orderprice=''
+          }
+        },
+        trantabactive(){//买入卖出变化时
+        // 清空价格和数量
+            this.orderprice=''
+            this.ordernum=''
+            if (this.orderprice==0) {
+            this.orderprice=this.market.price
+          }else{
+            this.orderprice=''
+          }
+        },
+        ktabactive(v){//监测k线 交易tab    
+            console.log(v);    
+            if (v==1) {
+                this.kline.destroy();
+                return
+            }
+            this.$nextTick(()=>{
+                this.initkline();
+            })
+                
+        },
+        // interval(v,l){
+        //     console.log(v,l,'watch');
+        //     var interval=v/60/1000
+        //     if (interval==60) {
+        //         interval='1h'
+        //     }
+        //     if (interval==1440) {
+        //         interval='1d'
+        //     }
+        //     // console.error(v,l)
+        //     if (l==null) {
+        //         return
+        //     }
+        //     // this.kline.updated({
+        //     //     code:this.coinitem.marketCode,
+        //     //     interval:interval
+        //     // })
+            
+        // }
+    },
+    computed: {
+        coin() {
+            // 币/币
+            return `${this.coinitem.exchangeCode}/${this.coinitem.unitsCode}`;
+        }
+    },
+    created() {
+
+        
+        
+        this.getcategory();
+        this.getentrust();
+        this.getlatestdeal();
+    },
+    destroyed () {
+        if (this.markettimer) {
+            clearInterval(this.markettimer)
+            this.markettimer=null
+        }
+        this.coinitem=this.category[0]
+        this.kline.destroy();
+    },
+    mounted() {
+         
+        
+    },
+    methods: {
+        initkline() {
+            //创建k线            
+            var width = $(window).width();
+            // this.kline = new Kline({
+            //     element: "#kline_container",
+            //     width: width,
+            //     height: 280,
+            //     theme: "light",
+            //     language: "zh-cn",
+            //     ranges: ["1w", "1d", "1h", "30m", "15m", "5m", "1m", "line"],
+            //     symbol: "that.coinitem.marketCode",
+            //     symbolName: "ETHBTC",
+            //     type: "poll",
+            //     url: "http://192.168.0.27:8080../../../../static/images/mock.json",
+            //     limit: 1000,
+            //     intervalTime: 5000,
+            //     debug: false,
+            //     showTrade: false,
+            //     showToolbar: false,
+            //     showLoading: false,
+            //     onResize: function(width, height) {
+            //         console.log("chart resized: " + width + " " + height);
+            //     }
+            // });
+            // this.kline.draw();
+            if (this.kline!=null) {
+                console.log(this.kline.params);
+                this.kline.destroy();
+                this.kline=null
+                console.log(this.kline)
+            }
+            console.log('kline',this.coinitem.marketCode);
+            var that=this
+        this.kline = new Kline({
+            element: "#kline_container",
+            width: width,
+            height: 280,
+            theme: 'light', // light/dark
+            language: 'zh-cn', // zh-cn/en-us/zh-tw
+            ranges: [ "1d", "1h", "30m", "15m", "5m", "1m", "line"],
+            symbol: that.coinitem.marketCode,
+            symbolName: that.coinitem.marketCode,
+            type: "poll", // poll/socket
+            url: `${process.env.BASEURL}/api/market/kline_data`,// api/market/kline_datacode?interval=1&code=BSBTCUSD  ../../../../static/js/mock.json
+            limit: 1000,
+            intervalTime: 50000,
+            method:'POST',
+            debug: false,
+            showTrade: false,
+            showToolbar: false,
+            showLoading: false,
+            hideSizeIcon:true,
+            params:{
+                code:that.coinitem.marketCode,
+                interval:that.formatrange(this.range)
+            },
+            onResize: function(width, height) {
+                console.log("chart resized: " + width + " " + height);
+            },
+            filterData(res){
+                // console.log(this,that.coinitem.marketCode,'fl');
+                console.log(res,'fl');
+                if (res.errorCode) {
+                    return 
+                }
+                var line=[]
+                res.data.forEach(function(val){
+                    var arr=[]
+                    arr.push(val.timestamp,+val.open,+val.high,+val.low,+val.close)
+                    line.push(arr)
+                })
+                var formatres={
+                    'success':true,
+                    'data':{
+                        'lines':line
+                    }
+                }
+                console.log(formatres);
+                return formatres;
+            },
+            // onRangeChange(range){
+            //     var interval=range/1000/60
+            //     if (interval==60) {
+            //         interval='1h'
+            //     }
+            //     if (interval==1440) {
+            //         interval='1d'
+            //     }
+            //     // that.kline.updated({
+            //     //     code:that.coinitem.marketCode,
+            //     //     interval
+            //     // })
+                
+            // },
+            change(range){
+                // that.interval=range
+                console.log('change',range);
+            },
+            updateCurrentPeriod(range,params){//时间变动时触发的事件
+                    // var interval=range/1000/60
+                    // if (interval==60) {
+                    //     interval='1h'
+                    // }
+                    // if (interval==1440) {
+                    //     interval='1d'
+                    // }
+                console.log('updateCurrentPeriod',range,params,this);
+                this.params={
+                    code:that.coinitem.marketCode,
+                    interval:that.formatrange(range)
+                }
+            },
+            setCookieSymbol(){
+                return that.coinitem.marketCode
+            }
+        });
+        this.kline.draw();
+        },
+        //格式化时间线
+        formatrange(range){
+            var interval=range/1000/60
+                if (interval==60) {
+                    interval='1h'
+                }
+                if (interval==1440) {
+                    interval='1d'
+                }
+            return interval
+        },
+        getcategory() {
+            //获取币种
+            this.$axios.post("api/trade/coin/category").then(res => {
+                  if (!res.data.errorCode) {
+                      this.category = res.data.data;
+                      this.coinitem = res.data.data[0];
+                      this.setmarkettimer();
+                      this.initkline();
+                  }
+              })
+              .catch(err => {});
+        },
+        setmarkettimer() {
+            //定时获取行情
+            if (this.markettimer) {
+                clearInterval(this.markettimer);
+                this.markettimer=null
+            }else{
+              this.getmarket()
+            }
+            this.markettimer = setInterval(() => {
+              this.getmarket()
+            }, 3000);
+        },
+        getmarket() {
+            //获取行情
+            // console.log(this.coinitem.marketCode);
+            this.$axios.get(`/api/market/latest_market?codes=${this.coinitem.marketCode}`).then(res => {
+                if (!res.data.errorCode) {
+                    // console.log(res.data.data);
+                    this.market = res.data.data[0];
+                }
+            }).catch(err => {});
+        },
+        order(){//下单
+        if (!this.orderprice) {
+            this.$toast('请输入金额')
+            return
+        }
+        if (!this.ordernum) {
+            this.$toast('请输入数量')
+            return
+        }
+          this.$axios({
+            url:'api/trade/coin/place_order',
+            method:'post',
+            headers:{
+              'Content-Type':'application/json;charset=utf-8'
+            },
+            params:{
+              categoryId:this.coinitem.id,//币币交易种类ID
+              direction:this.trantabactive,//方向 0:买入 1:卖出
+              orderType:this.ordertype,//交易类型 0:市价 1限价
+              unitPrice:this.orderprice,//单价
+              orderQuantity:this.ordernum,//交易数量
+
+            }
+          }).then(res=>{
+            if (!res.data.errorCode) {
+                this.$toast('委托成功!')
+                this.getentrust()
+            }
+          }).catch(err=>{
+
+          })
+        },
+        chooseprice(type,price,num){//选择价格
+          if (this.trantabactive==type) {
+            this.orderprice=price
+            this.ordernum=num
+          }
+          
+        },
+        getentrust(){//查询交易委托
+        if (this.$cookie.get('_auth')) {
+             this.$axios.post('api/trade/coin/query_entrust',{
+                start:0,
+                rows:10,
+                status:0
+            }).then(res=>{
+                if (!res.data.errorCode) {
+                    this.entrustlist=res.data.page.data
+                }
+            }).catch(err=>{
+
+            })
+        }
+           
+        },
+        getlatestdeal(){//获取最新交易
+            this.$axios.post('api/trade/coin/latest_deal').then(res=>{
+                if (!res.data.errorCode) {
+                    this.latestdeal=res.data.data
+                }
+                console.log(this.latestdeal);
+                
+            }).catch(err=>{
+
+            })
+        }
+    }
+};
+</script>
+
+<style scoped lang="less">
+img {
+    vertical-align: bottom;
+}
+// 当前委托
+.border-table table {
+    width: 100%;
+     td{
+    text-align: center;
+    padding: .7rem 0;
+    background: #fff;
+    font-size: 1rem;
+    border-bottom: .66px solid #f9fafc;
+    }
+    .item td{
+        padding: 0.2rem 0;
+    }
+}
+
+// 左边弹出 选择币种
+.popleft {
+    background-color: #fff;
+    width: 125px;
+    height: 100%;
+    .swit-head-down {
+        height: 3.6rem;
+        background: #0088f1;
+        text-align: center;
+        > span {
+            width: 100%;
+            height: 3.6rem;
+            line-height: 3.6rem;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+    }
+    .swit-list {
+        ul li {
+            background: #fff;
+            padding: 0 1.15rem;
+            height: 3.93rem;
+            line-height: 3.93rem;
+            border-bottom: 0.66px solid #f1f1f1;
+            color: #000;
+            position: relative;
+            span {
+                font-size: 13.333px;
+                display: inline-block;
+                padding-left: 2rem;
+                width: 100%;
+                text-align: center;
+                padding-left: 0;
+            }
+        }
+    }
+}
+// 右边弹出 菜单
+.popright {
+    background-color: #fff;
+    width: 125px;
+    height: 100%;
+    .swit-head {
+        padding: 1.56rem;
+    }
+    .swit-list {
+        ul li {
+            background: #fff;
+            padding: 0 1.15rem;
+            height: 3.93rem;
+            line-height: 3.93rem;
+            border-bottom: 0.66px solid #f1f1f1;
+            color: #000;
+            position: relative;
+            > span {
+                font-size: 13.333px;
+                display: inline-block;
+                padding-left: 2rem;
+                width: 100%;
+                text-align: center;
+                padding-left: 0;
+            }
+        }
+    }
+}
+// tou
+.coin-head {
+    height: 3.6rem;
+    background: #0088f1;
+    > ul {
+        display: flex;
+        > li {
+            flex: 1;
+            padding-top: 0.81rem;
+            box-sizing: border-box;
+            height: 3.6rem;
+            font-size: 1.1rem;
+            > span {
+                display: inline-block;
+                width: 8.68rem;
+                border-bottom: 0.3rem solid #0088f1;
+                text-align: center;
+                height: 2.5rem;
+                line-height: 2.5rem;
+                color: #fff;
+            }
+        }
+        .coin-active > span {
+            border-bottom: 0.3rem solid #a0d6fa !important;
+        }
+        li:last-child {
+            text-align: right;
+            color: #fff;
+            padding-right: 1.1rem;
+            padding-top: 1.18rem;
+        }
+    }
+}
+// k线
+.coin-cont {
+    //行情
+    .coin-num {
+        padding: 1.15rem;
+        display: flex;
+        font-size: 1rem;
+        .coin-num-left {
+            flex: 1;
+            line-height: 1.67rem;
+            .coin-nav {
+                > span {
+                    color: #000;
+                }
+                > i {
+                    color: #0088f1;
+                }
+            }
+            > span {
+                color: #ff3b3b;
+                > em {
+                    color: #000;
+                    padding-left: 0.75rem;
+                }
+            }
+            > p {
+                color: #ff3b3b;
+                > em {
+                    padding-left: 0.75rem;
+                }
+            }
+            > b {
+                color: #000;
+            }
+        }
+        .coin-num-right {
+            flex: 1;
+            text-align: right;
+            line-height: 1rem;
+            font-size: 1rem;
+            > button {
+                width: 4.6rem;
+                line-height: 1.44rem;
+                border-radius: 5px;
+                border: 0.66px solid #0088f1;
+                color: #0088f1;
+                background: #fff;
+                font-size: 10px;
+                outline: none;
+            }
+            > p {
+                padding-top: 2rem;
+                > em {
+                    color: #ff3b3b;
+                }
+            }
+        }
+    }
+    // k线图
+    .coin-chart {
+        font-size: 1rem;
+        img {
+            vertical-align: middle;
+        }
+        #item-list {
+            display: flex;
+            justify-content: space-between;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            > li {
+                list-style: none;
+                background: #d0ecff;
+                width: 33%;
+                text-align: center;
+                height: 2.18rem;
+                padding-top: 0.62rem;
+                // box-sizing: border-box;
+            }
+            .c-active {
+                color: #008bff !important;
+                background-color: #b9e3ff !important;
+            }
+        }
+        #t_1,
+        #t_2 {
+            width: 100%;
+        }
+        #fs {
+            width: 100%;
+            margin: auto;
+            margin-top: 5px;
+            background: #fff;
+            text-align: center;
+            position: absolute;
+            font-size: 12px;
+            z-index: 10000 !important;
+            -webkit-box-shadow: 0px 10px 16px -10px #d6d3d3;
+            box-shadow: 0px 10px 16px -10px #d6d3d3;
+            left: 0;
+            .kline_td {
+                padding: 10px 0px;
+            }
+            .chart-active {
+                background: #e3f3fe;
+                color: #0088f1 !important;
+            }
+        }
+        #fs1 {
+            width: 100%;
+            margin: auto;
+            margin-top: 5px;
+            background: #fff;
+            text-align: center;
+            position: absolute;
+            font-size: 12px;
+            z-index: 10000 !important;
+            -webkit-box-shadow: 0px 10px 16px -10px #d6d3d3;
+            box-shadow: 0px 10px 16px -10px #d6d3d3;
+            left: 0;
+            .kline_td {
+                padding: 10px 0px;
+            }
+        }
+    }
+    #chart {
+        height: 24.3rem;
+        max-width: 100%;
+        background-color: #fff;
+    }
+    // 最新成交
+    .coin-new {
+        padding: 0 1.5rem;
+        margin-bottom: 10rem;
+        > h6 {
+            border-bottom: 0.66px solid #d4d4d4;
+            line-height: 2.66rem;
+            font-size: 1.1rem;
+        }
+        > table {
+            width: 100%;
+            tr:first-child td {
+                font-size: 11.66px;
+                line-height: 1.9rem;
+                text-align: left;
+                width: 25%;
+            }
+        }
+    }
+    .coin-but {
+        height: 5.5rem;
+        // background: #fafdff;
+        position: fixed;
+        bottom: 60px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        padding-top: 1.38rem;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        z-index: 2;
+        width: 100%;
+        display: block;
+        -webkit-justify-content: space-around;
+        -ms-flex-pack: distribute;
+        justify-content: space-around;
+        font-size: 1.1rem;
+        > button {
+            width: 45%;
+            height: 2.77rem;
+            border-radius: 5px;
+            border: 0;
+            outline: none;
+            color: #fff;
+            margin-right: 2rem;
+        }
+        button:last-child {
+            margin-right: 0;
+        }
+        .hong {
+            background: #30bb82;
+        }
+        .lan {
+            background: #ff5353;
+        }
+    }
+}
+// 交易
+.coin-cont {
+    .coin-transaction {
+        height: 100%;
+        overflow: auto;
+        background: #fafdff;
+        .tran-head {
+            width: 100%;
+            height: 3rem;
+            padding-top: 1rem;
+            > ul {
+                width: 100%;
+                display: flex;
+                line-height: 1rem;
+                -webkit-justify-content: space-around;
+                -ms-flex-pack: distribute;
+                justify-content: space-around;
+                li {
+                    margin-left: 2.18rem;
+                    padding-top: 0.78rem;
+                    > span {
+                        font-size: 15.3333333333px;
+                    }
+                    > i {
+                        color: #0088f1;
+                    }
+                    > p {
+                        color: #ff5353;
+                        padding-bottom: 3px;
+                        font-size: 0.8rem;
+                    }
+                    > em {
+                        color: #9a9aaa;
+                        font-size: 0.8rem;
+                    }
+                    > b {
+                        display: inline-block;
+                        width: 7.5rem;
+                        height: 1.73rem;
+                        border-radius: 5px;
+                        line-height: 1.73rem;
+                        text-align: center !important;
+                        background: #ff3b3b;
+                        color: #ffffff;
+                        position: relative;
+                        overflow: hidden;
+                        font-size: 1rem;
+                    }
+                }
+                li:first-child {
+                    text-align: left;
+                }
+            }
+        }
+        .tran-cont {
+            margin-top: 1.15rem;
+            padding: 0 1.15rem 1.44rem 1.15rem;
+            background: #fff;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            box-sizing: border-box;
+            .tran-cont-right {
+                flex: 1;
+                text-align: left;
+                width: 50%;
+                // 买入卖出
+                .tran-tab {
+                    display: inline-block;
+                    padding-top: 1rem;
+                    li {
+                        float: left;
+                        width: 6.36rem;
+                        height: 2.6rem;
+                        line-height: 2.6rem;
+                        text-align: center !important;
+                        background: #f4f4f4;
+                        color: #ff3b3b;
+                    }
+                    .tran-tab-active {
+                        background: #30bb82 !important;
+                        color: #fff !important;
+                        font-weight: bold;
+                    }
+                    .tran-tab-active-red_no {
+                        background: #f4f4f4 !important;
+                        color: #ff5353 !important;
+                        font-weight: bold;
+                    }
+                    .tran-tab-active-red {
+                        background: #ff5353 !important;
+                        color: #fff !important;
+                        font-weight: bold;
+                    }
+                }
+                .tran-select {
+                    width: 12.73rem;
+                    margin-top: 1.3rem;
+                    border: 0.66px solid #cacaca;
+                    height: 2.37rem;
+                    display: inline-block;
+                    border-radius: 5px;
+                    line-height: 2.37rem;
+                    text-align: left !important;
+                    text-indent: 1.38rem;
+                    position: relative;
+                    > div > i {
+                        position: absolute;
+                        top: 0;
+                        right: 1rem;
+                        font-size: 13.33px;
+                        color: #787878;
+                    }
+                    .pay-list {
+                        position: absolute;
+                        top: 2.6rem;
+                        z-index: 2;
+                        box-shadow: 0 5px 0.57rem #c4d5ed;
+                        border-radius: 5px;
+                        background: #fff;
+                        width: 100%;
+                        li {
+                            text-align: left;
+                            line-height: 2.6rem;
+                            font-size: 12px;
+                            width: 100%;
+                        }
+                    }
+                }
+                .tran-num {
+                    margin-top: 0.81rem;
+                    border-radius: 5px;
+                    width: 12.73rem;
+                    height: 2.37rem;
+                    display: inline-block;
+                    > input {
+                        border: 0.66px solid #cacaca;
+                        float: left;
+                        width: 100%;
+                        height: 2.28rem;
+                        outline: none;
+                        text-align: center;
+                        margin-top: 0.3px;
+                        font-size: 11.66px;
+                        color: #000;
+                    }
+                }
+                > h5 {
+                    line-height: 2rem;
+                    width: 12.73rem;
+                    display: inline-block;
+                    text-align: left !important;
+                    font-size: 10.66px;
+                    color: #787878;
+                }
+                .tran-but {
+                    width: 12.73rem;
+                    display: inline-block;
+                    text-align: left !important;
+                    padding-top: 0.57rem;
+                    > button {
+                        height: 2.5rem;
+                        width: 85%;
+                        border: 0;
+                        outline: none;
+                        border-radius: 1.73rem;
+                        color: #fff;
+                        background: #49c86d;
+                    }
+                    .tran-tab-active {
+                        background: #30bb82 !important;
+                        color: #fff !important;
+                        font-weight: bold;
+                    }
+                    .tran-tab-active-red {
+                        background: #ff5353 !important;
+                        color: #fff !important;
+                        font-weight: bold;
+                    }
+                }
+            }
+            .tran-cont-left {
+                width: 50%;
+                dl {
+                    border-top: 0.6666666667px solid #f5f5f5;
+                    font-size: 11px;
+                    line-height: 2.14rem;
+                    > dt {
+                        float: left;
+                        width: 50%;
+                    }
+                    > dd {
+                        float: left;
+                        width: 50%;
+                        text-align: right;
+                        color: #000;
+                    }
+                }
+                .dl-col {
+                    color: #787878 !important;
+                }
+                .dl-red dt {
+                    color: #ff5353;
+                }
+                .dl-green dt {
+                    color: #30bb82;
+                }
+            }
+        }
+        .tran-price {
+            margin-top: 1.15rem;
+            background: #fff;
+            text-align: center;
+            .dq {
+                display: flex;
+                justify-content: space-between;
+                font-size: 15px;
+                color: #787878;
+                padding: 15px;
+                padding-bottom: 15px;
+            }
+        }
+    }
+}
+</style>

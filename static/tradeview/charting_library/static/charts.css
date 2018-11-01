@@ -1,0 +1,100 @@
+.header-group-fullscreen {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+}
+
+.header-group-fullscreen span {
+  background: #000 !important;
+  border: 1px solid #000 !important;
+}
+
+.chartButton {
+  line-height: 30px;
+  font-size: 13px;
+  width: 50px;
+  text-align: center;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* .header-group-properties{
+  position: absolute;
+  left: 320px;
+  top: 0;
+  z-index: 1;
+}
+.header-group-indicators{
+  position: absolute;
+  left: 370px;
+  top: 0;
+  z-index: 1;
+} */
+.header-group-properties span,
+.header-group-indicators a {
+  background: #000 !important;
+  border: 1px solid #000 !important;
+}
+
+/* .button:hover {
+  background: #000 !important;
+  border: 1px solid #000 !important;
+} */
+
+.chart-container {
+  border: 0 !important;
+}
+
+.separator-3cgsM4c1- {
+  display: none;
+}
+
+.buttontool {
+  line-height: 34px;
+  font-size: 13px;
+  width: 46px;
+  text-indent: 4px;
+  cursor: pointer;
+  font-family: "微软雅黑";
+  color: #a2a2a2;
+}
+
+.huang {
+  color: #f4f100 !important;
+}
+
+.favored-list-container span {
+  color: #4a4a4a;
+  background: #000;
+  border-color: #4a4a4a;
+
+}
+
+.feature-no-touch .favored-list-container span:hover {
+  background: #000000;
+  color: #4c525e;
+}
+
+.tv-close-panel {
+  border-color: #4a4a4a;
+  background-color: #505050;
+}
+
+.favored-list-container.active span.submenu,
+.favored-list-container span.submenu.active {
+  color: #adafb3;
+  background: #000000;
+}
+
+.header-chart-panel .button {
+  background: #000000 !important;
+  border-color: #4a4a4a !important;
+
+}
+.header-chart-panel .button:hover {
+  border-color: #b5b7b9 !important;
+}
+.date-range-list{
+  display: none;
+}
